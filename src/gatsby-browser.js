@@ -4,11 +4,16 @@ const { enhanceLunr } = require("./common.js");
 
 exports.onClientEntry = (
     args,
-    { languages, filename = "search_index.json", fetchOptions = {} }
+    {
+        indexname = "",
+        languages,
+        filename = "search_index.json",
+        fetchOptions = {} }
 ) => {
     enhanceLunr(lunr, languages);
-    window.__LUNR__ = window.__LUNR__ || {};
-    window.__LUNR__.__loaded = fetch(
+    const lunrIndexName = indexname ? "__LUNR__" + indexname + "__" : "__LUNR__"
+    window[lunrIndexName] = window[lunrIndexName] || {};
+    window[lunrIndexName].__loaded = fetch(
         `${__PATH_PREFIX__}/${filename}`,
         fetchOptions
     )
@@ -16,7 +21,7 @@ exports.onClientEntry = (
             return response.json();
         })
         .then(function(fullIndex) {
-            window.__LUNR__ = Object.keys(fullIndex).reduce(
+            window[lunrIndexName] = Object.keys(fullIndex).reduce(
                 (prev, key) => ({
                     ...prev,
                     [key]: {
@@ -25,10 +30,10 @@ exports.onClientEntry = (
                     }
                 }),
                 {
-                    __loaded: window.__LUNR__.__loaded
+                    __loaded: window[lunrIndexName].__loaded
                 }
             );
-            return window.__LUNR__;
+            return window[lunrIndexName];
         })
         .catch(e => {
             console.log("Failed fetch search index");
